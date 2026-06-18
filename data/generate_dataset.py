@@ -72,10 +72,11 @@ num_titles_watched = np.array([
     np.random.poisson(lam=min(months_subscribed[i] * 2, 60))
     for i in range(N)
 ])
+# capping number of titles at 100
 num_titles_watched = np.clip(num_titles_watched, 0, 100)
 
 # ── Churn logic ──────────────────────────────────────────────────────────────
-# Base churn probability per tier
+# Base churn probability per tier (Basic is most likely to churn inherently, and premium is least)
 tier_base = {"Basic": 0.15, "Standard": 0.07, "Premium": 0.04}
 churn_prob = np.array([tier_base[t] for t in tiers])
 
@@ -92,12 +93,23 @@ churn_prob += np.where(days_since_last_watch > 14, 0.18, 0)
 churn_prob += np.where(days_since_last_watch > 30, 0.12, 0)  # extra penalty
 
 # 4. Low genre diversity (stuck/bored)
+# Subscribers with genre diversity scores below 0.25 (selectively watching 1 specific genre) churn at a meaningfully higher rate; 
+# Potential business action: recommend the recommendation engine to actively nudge low-diversity users toward adjacent genres to expand their content diversity
 churn_prob += np.where(genre_diversity_score < 0.25, 0.10, 0)
 
 # 5. New subscriber risk window
+## Business logic: Subscribers in their first 3 months are in highest-risk window.
+## This period is called the "Trial hangover" or "early churn cliff"
+## This risk window can support a classic retention strategy of front-load engagement in the first
+## 90 days. 
+## Implement a structured 90-day onboarding journey:
+###  personalized content recommendations, 
+### check-in nudgesto get new subscribers past the highest-risk window before they disengage
 churn_prob += np.where(np.array(months_subscribed) < 3, 0.08, 0)
 
 # 6. Low completion rate
+## Subscribers with completion less than 40% might be receiving poorly-matched content recs
+## Consider auditing algorithm's performance for this segment, or maybe "not interested" feedback mechanism
 churn_prob += np.where(pct_content_completed < 0.4, 0.07, 0)
 
 # Protective factors
@@ -105,8 +117,12 @@ churn_prob -= np.where(num_profiles >= 3, 0.05, 0)
 churn_prob -= np.where(np.array(months_subscribed) > 12, 0.06, 0)
 churn_prob -= np.where(avg_weekly_watch_hours > 8, 0.08, 0)
 
+# clips the probs at 0.01 and 0.95 to better model the unpredictability. 
+# prob > 1 or < 0 is meaningless, and even having them equal to 1 or 0 is unrealistic
+# clipping allows for me to capture the small uncertainty they may not obey expectation
 churn_prob = np.clip(churn_prob, 0.01, 0.95)
-churned = np.random.binomial(1, churn_prob, size=N)
+# coin toss using each subscriber's churn probability (Bernouilli distribution)
+churned = np.random.binomial(1, churn_prob, size=N) # one trial per subscriber
 
 # Churn date (within their subscription window)
 churn_dates = []
@@ -139,7 +155,7 @@ df = pd.DataFrame({
 })
 
 # ── Save outputs ──────────────────────────────────────────────────────────────
-df.to_csv("/mnt/user-data/outputs/streaming_subscribers.csv", index=False)
+df.to_csv("streaming_subscribers.csv", index=False)
 
 # Quick validation summary
 print("=== Dataset Summary ===")
