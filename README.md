@@ -21,9 +21,9 @@ Identify which subscriber behaviors and content gaps predict cancellation, and r
 
 Preliminary findings from exploratory analysis:
 
-- Subscribers who don't watch within **7 days of signup** churn at **2.4x the rate** of those who do — suggesting onboarding is the single highest-leverage intervention point
-- **Basic tier** subscribers churn at 30% vs 6.4% for Premium — but tier alone is a proxy; low engagement hours is the underlying driver
-- Subscribers averaging **under 2 hours/week** churn at 40% vs 11% for engaged users
+- Subscribers who don't watch within **7 days of signup** churn at **2.3x the rate** of those who do — suggesting onboarding is the single highest-leverage intervention point
+- **Basic tier** subscribers churn at 30% vs 5.7% for Premium — but tier alone is a proxy; low engagement hours is the underlying driver
+- Subscribers averaging **under 2 hours/week** churn at 40% vs 10% for engaged users
 - New subscribers **(under 3 months)** are the highest-risk cohort at 25% churn
 
 ---
