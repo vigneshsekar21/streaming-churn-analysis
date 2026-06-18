@@ -29,37 +29,50 @@ signup_days = np.random.randint(0, 730, size=N)
 signup_dates = [base_date + timedelta(days=int(d)) for d in signup_days]
 months_subscribed = [max(1, (datetime(2024, 12, 31) - s).days // 30) for s in signup_dates]
 
+# higher number of profiles may correspond to less cancellation factor
 num_profiles = np.random.choice([1, 2, 3, 4, 5], size=N, p=[0.30, 0.30, 0.20, 0.15, 0.05])
 
 # ── Behavioral features ──────────────────────────────────────────────────────
-# Days to first watch — higher = more at risk
+# Days to first watch — higher = more at risk; using exponential distribution here because it captures the natural skew. most people will watch in first couple days.
 days_to_first_watch = np.random.exponential(scale=3, size=N).astype(int)
+# capping it at 30 days.
 days_to_first_watch = np.clip(days_to_first_watch, 0, 30)
 
-# Avg weekly watch hours — tier influences this
+# Avg weekly watch hours — tier influences this. Tuple structured like: (mean, standard deviation)
 tier_hours = {"Basic": (2, 1.5), "Standard": (5, 2.5), "Premium": (10, 4)}
+
+## using normal here because this is not skewed typically. People remain at a predictable average week over week.
 avg_weekly_watch_hours = np.array([
     max(0, np.random.normal(tier_hours[t][0], tier_hours[t][1]))
     for t in tiers
 ])
 avg_weekly_watch_hours = np.round(avg_weekly_watch_hours, 1)
 
-# Genre diversity score 0-1
+# Genre diversity score 0-1; using beta distribution as it does not go negative and outputs a value that is bounded between (0, 1). using a, b = 0.5 allows the distribution to be realistic and model that most people 
+# watch multiple genres.
 genre_diversity_score = np.round(np.random.beta(a=2, b=2, size=N), 2)
 
-# Pct content completed
+# Pct content completed; using beta as well. when a > b, the distribution skews toward 1, indicating that most subscribers lean towards a high completion rate. 
+# The algorithm encourages them to select content that they will likely finish.
 pct_content_completed = np.round(np.random.beta(a=5, b=2, size=N), 2)
 
-# Days since last watch
+# Days since last watch; using exponential with larger rate of 8 days as subscribers can go up to 1-2 weeks without watching. Wider window than first watch, as subscribers will
+# most likely have a shorter window to use their brand new service.
 days_since_last_watch = np.random.exponential(scale=8, size=N).astype(int)
+# capping at 90 because at this point, they have already churned mentally
 days_since_last_watch = np.clip(days_since_last_watch, 0, 90)
 
 # Favorite genre (most watched)
 favorite_genres = np.random.choice(GENRES, size=N)
 
-# Number of titles watched
-num_titles_watched = np.random.poisson(lam=15, size=N)
-num_titles_watched = np.clip(num_titles_watched, 0, 80)
+# Number of titles watched in lifetime
+# This value scales with tenure (~ 2 titles per month as an average)
+# Capped at lambda = 60, so very long-tenured subscribers do not produce unrealistic averages
+num_titles_watched = np.array([
+    np.random.poisson(lam=min(months_subscribed[i] * 2, 60))
+    for i in range(N)
+])
+num_titles_watched = np.clip(num_titles_watched, 0, 100)
 
 # ── Churn logic ──────────────────────────────────────────────────────────────
 # Base churn probability per tier
