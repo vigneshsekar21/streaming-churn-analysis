@@ -15,6 +15,19 @@ Identify which subscriber behaviors and content gaps predict cancellation, and r
 
 ---
 
+## Deliverables:
+- Synthetic dataset
+Python-generated subscriber data with realistic churn rates and behavioral features
+Churn model
+- Logistic regression or decision tree identifying top predictors of cancellation
+- Tableau dashboard
+- Churn by segment, retention curves, content gap analysis, key driver viz
+- Business memo
+1-page write-up with findings and 3 actionable recommendations for a product team
+- GitHub repo	
+Clean, documented code with a README explaining the business context
+
+
 ## Key findings
 
 > *(To be updated after modeling in Week 3)*
